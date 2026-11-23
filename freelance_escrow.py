@@ -3,147 +3,147 @@
 
 import genlayer as gl
 from genlayer.types import *
-from genlayer.storage import TreeMap
-from dataclasses import dataclass
 import json
 import typing
 
 
-@gl.storage.allow
-@dataclass
-class Job:
-    client: Address
-    freelancer: Address
-    brief: str            # agreed task description
-    amount: u256          # escrowed units (bookkeeping)
-    deliverable_url: str  # public link to the work
-    client_claim: str
-    freelancer_claim: str
-    status: str           # OPEN | DELIVERED | DISPUTED | RELEASED | REFUNDED | SPLIT
-    freelancer_pct: u256  # share awarded to freelancer (0-100)
-    reasoning: str
-
-
 class FreelanceEscrow(gl.contract.Contract):
-    jobs: gl.storage.TreeMap[u256, Job]
+    # Persistent storage using canonical GenLayer primitives
+    jobs: gl.storage.TreeMap[u256, str]
     next_id: u256
 
     def __init__(self):
         self.next_id = u256(1)
 
     # ---------- internal helpers ----------
-    def _job(self, job_id: int) -> Job:
+    def _load_job(self, job_id: int) -> dict:
         jid = u256(job_id)
         if jid not in self.jobs:
             if hasattr(gl, "vm") and hasattr(gl.vm, "UserError"):
                 raise gl.vm.UserError("Job not found")
             raise Exception("Job not found")
-        return self.jobs[jid]
+        return json.loads(self.jobs[jid])
+
+    def _save_job(self, job_id: int, job_data: dict) -> None:
+        jid = u256(job_id)
+        self.jobs[jid] = json.dumps(job_data)
 
     # ---------- write methods ----------
     @gl.public.write
     def create_job(self, freelancer: str, brief: str, amount: int) -> int:
-        jid = self.next_id
-        self.jobs[jid] = Job(
-            client=gl.message.sender_address,
-            freelancer=Address(freelancer),
-            brief=brief,
-            amount=u256(amount),
-            deliverable_url="",
-            client_claim="",
-            freelancer_claim="",
-            status="OPEN",
-            freelancer_pct=u256(0),
-            reasoning="",
-        )
-        self.next_id = u256(int(jid) + 1)
-        return int(jid)
+        jid = int(self.next_id)
+        job_data = {
+            "id": jid,
+            "client": gl.message.sender_address.as_hex,
+            "freelancer": Address(freelancer).as_hex,
+            "brief": brief,
+            "amount": int(amount),
+            "deliverable_url": "",
+            "client_claim": "",
+            "freelancer_claim": "",
+            "status": "OPEN",
+            "freelancer_pct": 0,
+            "reasoning": "",
+        }
+        self._save_job(jid, job_data)
+        self.next_id = u256(jid + 1)
+        return jid
 
     @gl.public.write
     def cancel_job(self, job_id: int) -> None:
         """Client can cancel and refund if the job has not been delivered yet."""
-        job = self._job(job_id)
-        if gl.message.sender_address != job.client:
+        job = self._load_job(job_id)
+        sender = gl.message.sender_address.as_hex.lower()
+        if sender != job["client"].lower():
             if hasattr(gl, "vm") and hasattr(gl.vm, "UserError"):
                 raise gl.vm.UserError("Only the client can cancel")
             raise Exception("Only the client can cancel")
-        if job.status != "OPEN":
+        if job["status"] != "OPEN":
             if hasattr(gl, "vm") and hasattr(gl.vm, "UserError"):
                 raise gl.vm.UserError("Can only cancel an open job that has not been delivered")
             raise Exception("Can only cancel an open job that has not been delivered")
-        job.status = "REFUNDED"
-        job.freelancer_pct = u256(0)
-        job.reasoning = "Cancelled by client before delivery."
+        job["status"] = "REFUNDED"
+        job["freelancer_pct"] = 0
+        job["reasoning"] = "Cancelled by client before delivery."
+        self._save_job(job_id, job)
 
     @gl.public.write
     def submit_delivery(self, job_id: int, url: str) -> None:
-        job = self._job(job_id)
-        if gl.message.sender_address != job.freelancer:
+        job = self._load_job(job_id)
+        sender = gl.message.sender_address.as_hex.lower()
+        if sender != job["freelancer"].lower():
             if hasattr(gl, "vm") and hasattr(gl.vm, "UserError"):
                 raise gl.vm.UserError("Only the freelancer can deliver")
             raise Exception("Only the freelancer can deliver")
-        if job.status not in ("OPEN", "DELIVERED"):
+        if job["status"] not in ("OPEN", "DELIVERED"):
             if hasattr(gl, "vm") and hasattr(gl.vm, "UserError"):
                 raise gl.vm.UserError("Job is closed")
             raise Exception("Job is closed")
-        job.deliverable_url = url
-        job.status = "DELIVERED"
+        job["deliverable_url"] = url
+        job["status"] = "DELIVERED"
+        self._save_job(job_id, job)
 
     @gl.public.write
     def approve(self, job_id: int) -> None:
-        job = self._job(job_id)
-        if gl.message.sender_address != job.client:
+        job = self._load_job(job_id)
+        sender = gl.message.sender_address.as_hex.lower()
+        if sender != job["client"].lower():
             if hasattr(gl, "vm") and hasattr(gl.vm, "UserError"):
                 raise gl.vm.UserError("Only the client can approve")
             raise Exception("Only the client can approve")
-        if job.status != "DELIVERED":
+        if job["status"] != "DELIVERED":
             if hasattr(gl, "vm") and hasattr(gl.vm, "UserError"):
                 raise gl.vm.UserError("Nothing to approve")
             raise Exception("Nothing to approve")
-        job.status = "RELEASED"
-        job.freelancer_pct = u256(100)
-        job.reasoning = "Approved directly by client."
+        job["status"] = "RELEASED"
+        job["freelancer_pct"] = 100
+        job["reasoning"] = "Approved directly by client."
+        self._save_job(job_id, job)
 
     @gl.public.write
     def open_dispute(self, job_id: int, claim: str) -> None:
-        job = self._job(job_id)
-        if gl.message.sender_address != job.client:
+        job = self._load_job(job_id)
+        sender = gl.message.sender_address.as_hex.lower()
+        if sender != job["client"].lower():
             if hasattr(gl, "vm") and hasattr(gl.vm, "UserError"):
                 raise gl.vm.UserError("Only the client can dispute")
             raise Exception("Only the client can dispute")
-        if job.status != "DELIVERED":
+        if job["status"] != "DELIVERED":
             if hasattr(gl, "vm") and hasattr(gl.vm, "UserError"):
                 raise gl.vm.UserError("Can only dispute a delivered job")
             raise Exception("Can only dispute a delivered job")
-        job.client_claim = claim
-        job.status = "DISPUTED"
+        job["client_claim"] = claim
+        job["status"] = "DISPUTED"
+        self._save_job(job_id, job)
 
     @gl.public.write
     def respond_to_dispute(self, job_id: int, claim: str) -> None:
-        job = self._job(job_id)
-        if gl.message.sender_address != job.freelancer:
+        job = self._load_job(job_id)
+        sender = gl.message.sender_address.as_hex.lower()
+        if sender != job["freelancer"].lower():
             if hasattr(gl, "vm") and hasattr(gl.vm, "UserError"):
                 raise gl.vm.UserError("Only the freelancer can respond")
             raise Exception("Only the freelancer can respond")
-        if job.status != "DISPUTED":
+        if job["status"] != "DISPUTED":
             if hasattr(gl, "vm") and hasattr(gl.vm, "UserError"):
                 raise gl.vm.UserError("No open dispute")
             raise Exception("No open dispute")
-        job.freelancer_claim = claim
+        job["freelancer_claim"] = claim
+        self._save_job(job_id, job)
 
     @gl.public.write
     def resolve(self, job_id: int) -> None:
         """Validators read the deliverable + both claims and reach consensus on a split."""
-        job = self._job(job_id)
-        if job.status != "DISPUTED":
+        job = self._load_job(job_id)
+        if job["status"] != "DISPUTED":
             if hasattr(gl, "vm") and hasattr(gl.vm, "UserError"):
                 raise gl.vm.UserError("No open dispute")
             raise Exception("No open dispute")
 
-        brief = job.brief
-        url = job.deliverable_url
-        c_claim = job.client_claim
-        f_claim = job.freelancer_claim
+        brief = job["brief"]
+        url = job["deliverable_url"]
+        c_claim = job["client_claim"]
+        f_claim = job["freelancer_claim"]
 
         def judge() -> str:
             try:
@@ -177,36 +177,22 @@ Reply with JSON only: {{"freelancer_pct": <0|25|50|75|100>, "reasoning": "<max 3
         except Exception:
             pct, reasoning = 50, "Could not parse arbiter output; defaulted to 50/50."
 
-        job.freelancer_pct = u256(pct)
-        job.reasoning = reasoning
-        job.status = "RELEASED" if pct == 100 else "REFUNDED" if pct == 0 else "SPLIT"
+        job["freelancer_pct"] = pct
+        job["reasoning"] = reasoning
+        job["status"] = "RELEASED" if pct == 100 else "REFUNDED" if pct == 0 else "SPLIT"
+        self._save_job(job_id, job)
 
     # ---------- view methods ----------
     @gl.public.view
     def get_job(self, job_id: int) -> dict[str, typing.Any]:
-        j = self._job(job_id)
-        return {
-            "id": job_id,
-            "client": j.client.as_hex,
-            "freelancer": j.freelancer.as_hex,
-            "brief": j.brief,
-            "amount": int(j.amount),
-            "deliverable_url": j.deliverable_url,
-            "client_claim": j.client_claim,
-            "freelancer_claim": j.freelancer_claim,
-            "status": j.status,
-            "freelancer_pct": int(j.freelancer_pct),
-            "reasoning": j.reasoning,
-        }
+        return self._load_job(job_id)
 
     @gl.public.view
-    def get_all_jobs(self) -> list[dict[str, typing.Any]]:
-        total = int(self.next_id) - 1
-        res = []
-        for i in range(1, total + 1):
-            if u256(i) in self.jobs:
-                res.append(self.get_job(i))
-        return res
+    def get_job_json(self, job_id: int) -> str:
+        jid = u256(job_id)
+        if jid not in self.jobs:
+            return ""
+        return self.jobs[jid]
 
     @gl.public.view
     def job_count(self) -> int:
