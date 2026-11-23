@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TrustWork – AI-Arbitrated Freelance Escrow on GenLayer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .glass { backdrop-filter: blur(12px); background: rgba(255, 255, 255, 0.85); }
+    .dark .glass { background: rgba(24, 24, 32, 0.85); }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(150,150,150,0.3); border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#0f0f15] text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Header -->
+  <header class="border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 glass">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-brand-500/30">
+          ⚖️
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-brand-600 to-indigo-500 bg-clip-text text-transparent">TrustWork</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300 font-semibold border border-brand-200 dark:border-brand-800">GenLayer AI Escrow</span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Decentralized Subjective Arbitration</p>
+        </div>
+      </div>
+
+      <!-- Mode & Role Controls -->
+      <div class="flex items-center space-x-3">
+        <!-- Mode Switcher -->
+        <div class="flex items-center bg-slate-200 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+          <button id="modeSimBtn" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-300 shadow-sm transition-all">
+            ⚡ Interactive Demo Mode
+          </button>
+          <button id="modeLiveBtn" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all">
+            🌐 GenLayer StudioNet
+          </button>
+        </div>
+
+        <!-- Dark mode toggle -->
+        <button id="themeToggle" class="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all">
+          <span id="themeIcon">🌙</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Active Persona Bar -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Acting As:</span>
+        <div class="inline-flex rounded-xl p-1 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+          <button id="roleClientBtn" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-brand-600 text-white shadow-sm flex items-center space-x-1.5">
+            <span>🧑‍💼 Client (Alice)</span>
+          </button>
+          <button id="roleFreelancerBtn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center space-x-1.5">
+            <span>👨‍💻 Freelancer (Bob)</span>
+          </button>
+          <button id="roleArbiterBtn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center space-x-1.5">
+            <span>⚖️ Observer / Arbiter</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3 text-xs">
+        <span class="text-slate-400">Wallet:</span>
+        <span id="activeAddressBadge" class="mono px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-semibold select-all">
+          0x1111...alice
+        </span>
+        <button id="copyAddrBtn" class="px-2 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition" title="Copy Address">
+          📋
+        </button>
+      </div>
+    </div>
+
+    <!-- Contract Connection Banner (Visible in Live StudioNet Mode) -->
+    <div id="liveNetPanel" class="hidden bg-gradient-to-r from-indigo-900/40 to-brand-900/40 border border-brand-500/30 rounded-2xl p-5 shadow-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="font-bold text-sm text-brand-300">GenLayer StudioNet Connected</span>
+        </div>
+        <a href="https://studio.genlayer.com" target="_blank" class="text-xs text-brand-400 hover:text-brand-300 underline font-semibold flex items-center space-x-1">
+          <span>Open GenLayer Studio</span>
+          <span>↗</span>
+        </a>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Deployed Intelligent Contract Address</label>
+          <input id="contractAddressInput" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 mono focus:outline-none focus:border-brand-500" placeholder="0x... (deploy freelance_escrow.py in GenLayer Studio)">
+        </div>
+        <div class="flex items-end">
+          <button id="connectContractBtn" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold py-2 px-4 rounded-xl text-sm transition shadow-lg shadow-brand-600/30">
+            Link Contract
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preset Scenarios Bar -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div class="flex items-center space-x-2">
+        <span class="text-xs font-bold text-slate-500 uppercase">⚡ Quick Demo Scenarios:</span>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button id="scenario1Btn" class="text-xs font-semibold px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition">
+          ✅ Scenario A: Perfect Delivery (100% Release)
+        </button>
+        <button id="scenario2Btn" class="text-xs font-semibold px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100 transition">
+          ⚖️ Scenario B: Partial Scope (50/50 Split)
+        </button>
+        <button id="scenario3Btn" class="text-xs font-semibold px-3 py-1.5 rounded-xl border border-rose-500/30 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 hover:bg-rose-100 transition">
+          ❌ Scenario C: Broken / Scam (0% Refund)
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Workspace Grid: Action Panels on Left, Active Job Dashboard on Right -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+      <!-- Left Column: Interactive Forms (Tabs for Create, Deliver, Dispute/Approve) -->
+      <div class="lg:col-span-5 space-y-6">
+
+        <!-- Action Card -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-6 space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <h2 class="text-base font-bold flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+              <span>Escrow Operations</span>
+            </h2>
+            <span id="roleInstructionBadge" class="text-xs px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold">
+              Client Actions
+            </span>
+          </div>
+
+          <!-- Section 1: Client Creates Job -->
+          <div id="sectionCreateJob" class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">1. Initialize Job & Deposit Escrow</h3>
+              <span class="text-xs text-brand-600 dark:text-brand-400 font-semibold">Step 1</span>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Freelancer Address</label>
+              <input id="inputFreelancerAddr" class="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm mono" value="0x2222222222222222222222222222222222222222">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Agreed Work Brief (Acceptance Rubric)</label>
+              <textarea id="inputBrief" rows="3" class="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm" placeholder="e.g. Build modern SaaS landing page with dark theme, responsive grid, and pricing cards."></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Escrow Amount (Units / GL Tokens)</label>
+              <input id="inputAmount" type="number" class="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm" value="500">
+            </div>
+            <button id="btnCreateJob" class="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-500 active:scale-[0.98] text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-brand-600/20 flex items-center justify-center space-x-2">
+              <span>🚀 Create Escrow Job</span>
+            </button>
+          </div>
+
+          <!-- Section 2: Freelancer Delivers Work -->
+          <div id="sectionDeliverWork" class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">2. Submit Deliverable</h3>
+              <span class="text-xs text-brand-600 dark:text-brand-400 font-semibold">Step 2 (Freelancer)</span>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Deliverable URL / Live Preview Link</label>
+              <input id="inputDeliverableUrl" class="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm" placeholder="https://demo-work.pages.dev/preview">
+            </div>
+            <button id="btnSubmitDelivery" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-indigo-600/20 flex items-center justify-center space-x-2">
+              <span>📦 Submit Work Delivery</span>
+            </button>
+          </div>
+
+          <!-- Section 3: Client Review / Dispute & Resolution -->
+          <div id="sectionDisputeResolve" class="border-t border-slate-100 dark:border-slate-800 pt-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">3. Review & Dispute Resolution</h3>
+              <span class="text-xs text-brand-600 dark:text-brand-400 font-semibold">Step 3 & 4</span>
+            </div>
+
+            <!-- Client Approval & Cancel -->
+            <div class="grid grid-cols-2 gap-2">
+              <button id="btnApprove" class="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-xs transition shadow-sm flex items-center justify-center space-x-1">
+                <span>✅ Approve & Release (100%)</span>
+              </button>
+              <button id="btnCancelJob" class="py-2.5 px-3 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 dark:bg-slate-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-xs transition shadow-sm flex items-center justify-center space-x-1">
+                <span>🚫 Cancel Unfulfilled Job</span>
+              </button>
+            </div>
+
+            <!-- Dispute Claims -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Statement / Claim Text</label>
+              <textarea id="inputClaim" rows="2" class="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm" placeholder="Client: Explain discrepancies. / Freelancer: State defense."></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <button id="btnOpenDispute" class="py-2.5 px-3 border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-1">
+                <span>⚠️ Open Dispute (Client)</span>
+              </button>
+              <button id="btnRespondDispute" class="py-2.5 px-3 border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-1">
+                <span>🗣️ Counter-claim (Freelancer)</span>
+              </button>
+            </div>
+
+            <!-- AI Arbiter Trigger -->
+            <div class="pt-2">
+              <button id="btnResolveDispute" class="w-full py-3 px-4 bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600 hover:opacity-95 active:scale-[0.98] text-white font-bold rounded-xl text-sm transition shadow-xl shadow-brand-500/25 flex items-center justify-center space-x-2">
+                <span>🤖 Trigger AI Validator Resolution</span>
+              </button>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 text-center mt-1.5">
+                Validators independently fetch deliverable, evaluate against brief, and reach consensus.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Job History Selector -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Escrow Contracts Registry</h3>
+            <span id="jobCountBadge" class="text-xs font-mono font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 rounded-full border border-brand-200 dark:border-brand-800">
+              0 Jobs
+            </span>
+          </div>
+          <div id="jobListContainer" class="space-y-2 max-h-48 overflow-y-auto custom-scroll pr-1">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Active Escrow Detail, Stepper, Arbiter Verdict & Consensus Inspector -->
+      <div class="lg:col-span-7 space-y-6">
+
+        <!-- Active Escrow Card -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-6 space-y-6">
+
+          <!-- Card Header & Status Badge -->
+          <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <span class="text-xs font-mono text-slate-400">Job #<span id="activeJobId">1</span></span>
+              <h2 id="activeJobTitle" class="text-lg font-bold text-slate-900 dark:text-white">Loading job...</h2>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span id="activeStatusBadge" class="px-3 py-1 rounded-full text-xs font-bold border">
+                OPEN
+              </span>
+              <button id="btnRefresh" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition" title="Refresh State">
+                🔄
+              </button>
+            </div>
+          </div>
+
+          <!-- Visual Progress Stepper -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-400">
+              <span id="step1Label" class="text-brand-600 dark:text-brand-400 font-bold">1. Created</span>
+              <span id="step2Label">2. Delivered</span>
+              <span id="step3Label">3. Review / Dispute</span>
+              <span id="step4Label">4. Settled</span>
+            </div>
+            <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+              <div id="stepperProgress" class="h-full bg-brand-500 transition-all duration-500" style="width: 25%"></div>
+            </div>
+          </div>
+
+          <!-- Metadata Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200/60 dark:border-slate-700/60 text-xs">
+            <div>
+              <span class="text-slate-400 block font-medium">Escrow Value</span>
+              <span id="dispAmount" class="font-bold text-sm text-slate-800 dark:text-slate-100">0 GL</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block font-medium">Client</span>
+              <span id="dispClient" class="mono text-slate-700 dark:text-slate-300 truncate block">0x...</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block font-medium">Freelancer</span>
+              <span id="dispFreelancer" class="mono text-slate-700 dark:text-slate-300 truncate block">0x...</span>
+            </div>
+            <div class="col-span-2 sm:col-span-3">
+              <span class="text-slate-400 block font-medium mb-1">Agreed Brief Rubric</span>
+              <p id="dispBrief" class="text-slate-700 dark:text-slate-300 font-normal leading-relaxed italic bg-white dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200/50 dark:border-slate-800">
+                Brief details...
+              </p>
+            </div>
+            <div class="col-span-2 sm:col-span-3">
+              <span class="text-slate-400 block font-medium mb-1">Deliverable URL</span>
+              <a id="dispDeliverableUrl" href="#" target="_blank" class="text-brand-600 dark:text-brand-400 hover:underline mono break-all">
+                Not delivered yet
+              </a>
+            </div>
+          </div>
+
+          <!-- Dispute Dossier (Shows if Disputed or Resolved) -->
+          <div id="disputeDossier" class="space-y-3 border-t border-slate-100 dark:border-slate-800 pt-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Dispute Claims Dossier</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3.5 space-y-1">
+                <span class="text-[11px] font-bold text-amber-700 dark:text-amber-400 flex items-center space-x-1">
+                  <span>🧑‍💼 Client Claim</span>
+                </span>
+                <p id="dispClientClaim" class="text-xs text-slate-600 dark:text-slate-300 italic">No claim filed.</p>
+              </div>
+              <div class="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-3.5 space-y-1">
+                <span class="text-[11px] font-bold text-indigo-700 dark:text-indigo-400 flex items-center space-x-1">
+                  <span>👨‍💻 Freelancer Response</span>
+                </span>
+                <p id="dispFreelancerClaim" class="text-xs text-slate-600 dark:text-slate-300 italic">No counter-claim filed.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Arbiter Consensus & Payout Result -->
+          <div id="verdictPanel" class="space-y-4 border-t border-slate-100 dark:border-slate-800 pt-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center space-x-1.5">
+                <span>🤖 GenLayer Validator Consensus Verdict</span>
+              </h3>
+              <span id="verdictPctBadge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300">
+                Pending
+              </span>
+            </div>
+
+            <!-- Payout Distribution Bar -->
+            <div>
+              <div class="flex justify-between text-xs font-bold mb-1.5">
+                <span class="text-emerald-600 dark:text-emerald-400">Freelancer Payout: <span id="valPctFreelancer">0</span>%</span>
+                <span class="text-purple-600 dark:text-purple-400">Client Refund: <span id="valPctClient">100</span>%</span>
+              </div>
+              <div class="h-3 w-full bg-purple-500/20 rounded-full overflow-hidden flex">
+                <div id="payoutSplitBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- Official Arbiter Written Reasoning -->
+            <div class="bg-gradient-to-br from-brand-500/10 via-purple-500/5 to-slate-900/10 border border-brand-500/30 rounded-xl p-4 space-y-2">
+              <span class="text-[11px] font-bold text-brand-700 dark:text-brand-300 uppercase tracking-wider flex items-center space-x-1">
+                <span>📝 Arbiter Consensus Reasoning</span>
+              </span>
+              <p id="dispReasoning" class="text-xs leading-relaxed text-slate-700 dark:text-slate-200">
+                Awaiting resolution. When triggered, validators evaluate deliverable content against the prompt criteria.
+              </p>
+            </div>
+
+            <!-- Simulated Validator Node Breakdown -->
+            <div id="validatorNodesBox" class="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl p-3.5 space-y-2 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-[11px] text-slate-500 uppercase">Equivalence Principle Nodes (5 Validators)</span>
+                <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">Consensus Threshold: ≥66%</span>
+              </div>
+              <div id="nodesList" class="grid grid-cols-5 gap-2 text-center">
+                <!-- Populated dynamically with node votes -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Live Execution & Transaction Log -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+              <span>📜 Consensus & Execution Log</span>
+            </h3>
+            <button id="btnClearLog" class="text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">Clear</button>
+          </div>
+          <div id="txLog" class="mono text-xs text-slate-700 dark:text-slate-300 bg-slate-950 p-4 rounded-xl h-44 overflow-y-auto space-y-1 text-emerald-400 font-mono">
+            <div>[System] TrustWork initialized. Ready for operations.</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900 text-white border border-slate-700 px-4 py-3 rounded-xl shadow-2xl text-xs flex items-center space-x-2">
+    <span id="toastIcon">✨</span>
+    <span id="toastMsg">Notification message</span>
+  </div>
+
+  <!-- Main Application Logic (Supports Dual Mode: Local Simulation & Live GenLayer StudioNet) -->
+  <script type="module">
+    // Addresses
+    const ADDR_ALICE = "0x1111111111111111111111111111111111111111"; // Client
+    const ADDR_BOB   = "0x2222222222222222222222222222222222222222"; // Freelancer
+    const ADDR_ARBITER = "0x3333333333333333333333333333333333333333"; // Observer
+
+    // State
+    let currentRole = "CLIENT"; // CLIENT | FREELANCER | ARBITER
+    let isLiveMode = false;
+    let liveClient = null;
+    let liveAccount = null;
+    let deployedContractAddress = "";
+
+    // In-Memory Simulation State (allows 100% offline testing & instant demos)
+    const simState = {
+      nextId: 1,
+      jobs: new Map()
+    };
+
+    // Helper DOM
+    const $ = (id) => document.getElementById(id);
+
+    function log(msg, type = "info") {
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement("div");
+      div.className = type === "error" ? "text-rose-400" : type === "success" ? "text-emerald-400" : type === "warn" ? "text-amber-400" : "text-slate-300";
+      div.textContent = `[${time}] ${msg}`;
+      $("txLog").appendChild(div);
+      $("txLog").scrollTop = $("txLog").scrollHeight;
+    }
+
+    function showToast(msg, icon = "✨") {
+      const t = $("toast");
+      $("toastMsg").textContent = msg;
+      $("toastIcon").textContent = icon;
+      t.classList.remove("translate-y-20", "opacity-0");
+      setTimeout(() => t.classList.add("translate-y-20", "opacity-0"), 3500);
+    }
+
+    // Role switching
+    function getActiveAddress() {
+      if (isLiveMode && liveAccount) return liveAccount.address;
+      if (currentRole === "CLIENT") return ADDR_ALICE;
+      if (currentRole === "FREELANCER") return ADDR_BOB;
+      return ADDR_ARBITER;
+    }
+
+    function setRole(role) {
+      currentRole = role;
+      const clientBtn = $("roleClientBtn");
+      const flBtn = $("roleFreelancerBtn");
+      const arbBtn = $("roleArbiterBtn");
+
+      [clientBtn, flBtn, arbBtn].forEach(b => {
+        b.className = "px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center space-x-1.5";
+      });
+
+      if (role === "CLIENT") {
+        clientBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-brand-600 text-white shadow-sm flex items-center space-x-1.5";
+        $("roleInstructionBadge").textContent = "Acting as Client (Alice)";
+      } else if (role === "FREELANCER") {
+        flBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm flex items-center space-x-1.5";
+        $("roleInstructionBadge").textContent = "Acting as Freelancer (Bob)";
+      } else {
+        arbBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-purple-600 text-white shadow-sm flex items-center space-x-1.5";
+        $("roleInstructionBadge").textContent = "Acting as Observer / Arbiter";
+      }
+
+      $("activeAddressBadge").textContent = getActiveAddress();
+      log(`Switched active profile to ${role} (${getActiveAddress().slice(0, 8)}...)`);
+    }
+
+    // Mode Toggle
+    function setMode(live) {
+      isLiveMode = live;
+      if (live) {
+        $("modeLiveBtn").className = "px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-300 shadow-sm transition-all";
+        $("modeSimBtn").className = "px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all";
+        $("liveNetPanel").classList.remove("hidden");
+        initGenLayerJs();
+      } else {
+        $("modeSimBtn").className = "px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-300 shadow-sm transition-all";
+        $("modeLiveBtn").className = "px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all";
+        $("liveNetPanel").classList.add("hidden");
+        log("Switched to Local Simulation Mode.");
+      }
+    }
+
+    // Initialize genlayer-js for live mode
+    async function initGenLayerJs() {
+      try {
+        log("Loading genlayer-js library...");
+        const { createClient, createAccount, generatePrivateKey } = await import("https://esm.sh/genlayer-js");
+        const { studionet } = await import("https://esm.sh/genlayer-js/chains");
+
+        let pk = localStorage.getItem("tw_pk");
+        if (!pk) {
+          pk = generatePrivateKey();
+          localStorage.setItem("tw_pk", pk);
+        }
+        liveAccount = createAccount(pk);
+        liveClient = createClient({ chain: studionet, account: liveAccount });
+        $("activeAddressBadge").textContent = liveAccount.address;
+        log(`Connected to StudioNet with account ${liveAccount.address}`, "success");
+        showToast("Connected to GenLayer StudioNet", "🌐");
+      } catch (err) {
+        log(`Notice: Could not load remote genlayer-js (${err.message}). Interactive Simulator remains fully active!`, "warn");
+      }
+    }
+
+    // --- Contract Interaction Bridge ---
+    let activeJobId = 1;
+
+    async function executeContractWrite(fnName, args) {
+      const sender = getActiveAddress();
+
+      if (isLiveMode && liveClient && deployedContractAddress) {
+        log(`→ Sending transaction [${fnName}] to ${deployedContractAddress.slice(0, 10)}...`);
+        const hash = await liveClient.writeContract({
+          address: deployedContractAddress,
+          functionName: fnName,
+          args: args,
+          value: 0n
+        });
+        log(`  Tx hash: ${hash}. Waiting for validator consensus...`);
+        await liveClient.waitForTransactionReceipt({ hash, status: "ACCEPTED", retries: 60, interval: 3000 });
+        log(`✓ Transaction [${fnName}] accepted on StudioNet!`, "success");
+        return;
+      }
+
+      // SIMULATION LOGIC: Exactly mirrors freelance_escrow.py
+      log(`⚡ [Sim] Executing ${fnName}(${args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(", ")}) as ${sender.slice(0, 8)}...`);
+
+      if (fnName === "create_job") {
+        const [freelancer, brief, amount] = args;
+        const jid = simState.nextId++;
+        const newJob = {
+          id: jid,
+          client: sender,
+          freelancer: freelancer.toLowerCase(),
+          brief: brief,
+          amount: Number(amount),
+          deliverable_url: "",
+          client_claim: "",
+          freelancer_claim: "",
+          status: "OPEN",
+          freelancer_pct: 0,
+          reasoning: ""
+        };
+        simState.jobs.set(jid, newJob);
+        activeJobId = jid;
+        log(`✓ Job #${jid} created successfully! Escrow locked: ${amount} units`, "success");
+        showToast(`Job #${jid} Created!`, "🚀");
+      }
+      else if (fnName === "submit_delivery") {
+        const [jid, url] = args;
+        const job = simState.jobs.get(jid);
+        if (!job) throw new Error("Job not found");
+        if (sender.toLowerCase() !== job.freelancer.toLowerCase()) {
+          throw new Error("Only the freelancer can submit deliverable!");
+        }
+        if (job.status !== "OPEN" && job.status !== "DELIVERED") {
+          throw new Error("Job is closed");
+        }
+        job.deliverable_url = url;
+        job.status = "DELIVERED";
+        log(`✓ Deliverable submitted for Job #${jid}: ${url}`, "success");
+        showToast("Deliverable Submitted!", "📦");
+      }
+      else if (fnName === "approve") {
+        const [jid] = args;
+        const job = simState.jobs.get(jid);
+        if (!job) throw new Error("Job not found");
+        if (sender.toLowerCase() !== job.client.toLowerCase()) {
+          throw new Error("Only the client can approve");
+        }
+        if (job.status !== "DELIVERED") {
+          throw new Error("Cannot approve before delivery");
+        }
+        job.status = "RELEASED";
+        job.freelancer_pct = 100;
+        job.reasoning = "Approved directly by client. 100% of escrow released to freelancer.";
+        log(`✓ Job #${jid} approved by client! 100% released to freelancer.`, "success");
+        showToast("Job Approved & Released!", "✅");
+      }
+      else if (fnName === "cancel_job") {
+        const [jid] = args;
+        const job = simState.jobs.get(jid);
+        if (!job) throw new Error("Job not found");
+        if (sender.toLowerCase() !== job.client.toLowerCase()) {
+          throw new Error("Only the client can cancel");
+        }
+        if (job.status !== "OPEN") {
+          throw new Error("Can only cancel an open job that has not been delivered yet");
+        }
+        job.status = "REFUNDED";
+        job.freelancer_pct = 0;
+        job.reasoning = "Cancelled by client prior to delivery. Full refund issued.";
+        log(`✓ Job #${jid} cancelled by client before delivery. Escrow refunded.`, "success");
+        showToast("Job Cancelled & Refunded!", "🚫");
+      }
+      else if (fnName === "open_dispute") {
+        const [jid, claim] = args;
+        const job = simState.jobs.get(jid);
+        if (!job) throw new Error("Job not found");
+        if (sender.toLowerCase() !== job.client.toLowerCase()) {
+          throw new Error("Only the client can dispute");
+        }
+        if (job.status !== "DELIVERED") {
+          throw new Error("Can only dispute a delivered job");
+        }
+        job.client_claim = claim;
+        job.status = "DISPUTED";
+        log(`⚠️ Dispute opened for Job #${jid} by client. Claim: "${claim}"`, "warn");
+        showToast("Dispute Opened!", "⚠️");
+      }
+      else if (fnName === "respond_to_dispute") {
+        const [jid, claim] = args;
+        const job = simState.jobs.get(jid);
+        if (!job) throw new Error("Job not found");
+        if (sender.toLowerCase() !== job.freelancer.toLowerCase()) {
+          throw new Error("Only the freelancer can respond to dispute");
+        }
+        if (job.status !== "DISPUTED") {
+          throw new Error("No open dispute on this job");
+        }
+        job.freelancer_claim = claim;
+        log(`✓ Freelancer filed counter-claim on Job #${jid}: "${claim}"`, "info");
+        showToast("Counter-claim Filed!", "🗣️");
+      }
+      else if (fnName === "resolve") {
+        const [jid] = args;
+        const job = simState.jobs.get(jid);
+        if (!job) throw new Error("Job not found");
+        if (job.status !== "DISPUTED") {
+          throw new Error("No open dispute to resolve");
+        }
+
+        log(`🤖 Simulating GenLayer Equivalence Principle consensus across 5 validator nodes...`);
+
+        // Smart evaluation logic based on brief and deliverable
+        let pct = 50;
+        let reasoning = "";
+        let nodeVotes = [];
+
+        const url = (job.deliverable_url || "").toLowerCase();
+        const brief = (job.brief || "").toLowerCase();
+        const cClaim = (job.client_claim || "").toLowerCase();
+
+        if (url.includes("404") || url.includes("broken") || cClaim.includes("broken") || cClaim.includes("empty")) {
+          pct = 0;
+          reasoning = "Validators verified deliverable URL: target returned 404/broken link. The submitted work completely fails the agreed brief.";
+          nodeVotes = [0, 0, 0, 25, 0];
+        } else if (url.includes("partial") || cClaim.includes("stripe") || cClaim.includes("backend") || cClaim.includes("half")) {
+          pct = 50;
+          reasoning = "Validators evaluated deliverable against brief: Frontend UI was completed satisfactorily, but backend/payment integration is missing. 50/50 split awarded.";
+          nodeVotes = [50, 50, 50, 75, 50];
+        } else {
+          pct = 75;
+          reasoning = "Validators reviewed deliverable content: core requirements met with minor cosmetic deviations. 75% awarded to freelancer.";
+          nodeVotes = [75, 75, 75, 50, 75];
+        }
+
+        job.freelancer_pct = pct;
+        job.reasoning = reasoning;
+        job.status = pct === 100 ? "RELEASED" : pct === 0 ? "REFUNDED" : "SPLIT";
+        job._nodeVotes = nodeVotes;
+
+        log(`✓ AI Consensus reached! Result: ${job.status} (${pct}% to freelancer)`, "success");
+        log(`  Reasoning: "${reasoning}"`, "info");
+        showToast(`AI Arbiter: ${pct}% Split Awarded!`, "🤖");
+      }
+    }
+
+    async function fetchJob(jid) {
+      if (isLiveMode && liveClient && deployedContractAddress) {
+        const res = await liveClient.readContract({
+          address: deployedContractAddress,
+          functionName: "get_job",
+          args: [jid]
+        });
+        return res instanceof Map ? Object.fromEntries(res) : res;
+      }
+
+      return simState.jobs.get(jid) || null;
+    }
+
+    async function fetchAllJobs() {
+      if (isLiveMode && liveClient && deployedContractAddress) {
+        try {
+          const res = await liveClient.readContract({
+            address: deployedContractAddress,
+            functionName: "get_all_jobs",
+            args: []
+          });
+          return Array.isArray(res) ? res : [];
+        } catch {
+          return [];
+        }
+      }
+
+      return Array.from(simState.jobs.values());
+    }
+
+    // --- UI Renderers ---
+    async function renderActiveJob() {
+      const job = await fetchJob(activeJobId);
+      if (!job) {
+        $("activeJobTitle").textContent = "No job selected";
+        return;
+      }
+
+      $("activeJobId").textContent = job.id;
+      $("activeJobTitle").textContent = job.brief.length > 50 ? job.brief.slice(0, 50) + "..." : job.brief;
+      $("dispBrief").textContent = job.brief;
+      $("dispAmount").textContent = `${job.amount} GL`;
+      $("dispClient").textContent = job.client;
+      $("dispFreelancer").textContent = job.freelancer;
+
+      if (job.deliverable_url) {
+        $("dispDeliverableUrl").href = job.deliverable_url;
+        $("dispDeliverableUrl").textContent = job.deliverable_url;
+      } else {
+        $("dispDeliverableUrl").href = "#";
+        $("dispDeliverableUrl").textContent = "Work not submitted yet";
+      }
+
+      // Status pill & color
+      const s = job.status;
+      const statusBadge = $("activeStatusBadge");
+      statusBadge.textContent = s;
+
+      const colorMap = {
+        OPEN: "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700",
+        DELIVERED: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-700",
+        DISPUTED: "bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-700",
+        RELEASED: "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-700",
+        REFUNDED: "bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700",
+        SPLIT: "bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-900/50 dark:text-indigo-300 dark:border-indigo-700"
+      };
+      statusBadge.className = `px-3 py-1 rounded-full text-xs font-bold border ${colorMap[s] || "bg-slate-100 text-slate-800"}`;
+
+      // Stepper
+      const stepper = $("stepperProgress");
+      const s1 = $("step1Label"), s2 = $("step2Label"), s3 = $("step3Label"), s4 = $("step4Label");
+      [s1, s2, s3, s4].forEach(l => l.className = "text-slate-400 font-semibold");
+
+      if (s === "OPEN") {
+        stepper.style.width = "25%";
+        s1.className = "text-brand-600 dark:text-brand-400 font-bold";
+      } else if (s === "DELIVERED") {
+        stepper.style.width = "50%";
+        s2.className = "text-brand-600 dark:text-brand-400 font-bold";
+      } else if (s === "DISPUTED") {
+        stepper.style.width = "75%";
+        s3.className = "text-amber-600 dark:text-amber-400 font-bold";
+      } else {
+        stepper.style.width = "100%";
+        s4.className = "text-emerald-600 dark:text-emerald-400 font-bold";
+      }
+
+      // Claims
+      $("dispClientClaim").textContent = job.client_claim || "No claim filed by client.";
+      $("dispFreelancerClaim").textContent = job.freelancer_claim || "No counter-claim filed by freelancer.";
+
+      // Payout Bar & Reasoning
+      const flPct = Number(job.freelancer_pct) || 0;
+      const clientPct = 100 - flPct;
+      $("valPctFreelancer").textContent = flPct;
+      $("valPctClient").textContent = clientPct;
+      $("payoutSplitBar").style.width = `${flPct}%`;
+      $("verdictPctBadge").textContent = `${flPct}% Payout`;
+
+      if (job.reasoning) {
+        $("dispReasoning").textContent = job.reasoning;
+      } else {
+        $("dispReasoning").textContent = "No arbitration verdict yet. If a dispute arises, AI validators will examine the deliverable.";
+      }
+
+      // Validator Nodes breakdown
+      const nodesBox = $("nodesList");
+      nodesBox.innerHTML = "";
+      const votes = job._nodeVotes || (s === "RELEASED" ? [100, 100, 100, 100, 100] : s === "REFUNDED" ? [0, 0, 0, 0, 0] : [50, 50, 50, 50, 50]);
+      votes.forEach((v, idx) => {
+        const item = document.createElement("div");
+        item.className = "p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800";
+        item.innerHTML = `<span class="block text-[10px] text-slate-400 font-mono">Node #${idx+1}</span><span class="font-bold text-xs ${v >= 50 ? 'text-emerald-500' : 'text-purple-500'}">${v}%</span>`;
+        nodesBox.appendChild(item);
+      });
+
+      renderJobList();
+    }
+
+    async function renderJobList() {
+      const jobs = await fetchAllJobs();
+      $("jobCountBadge").textContent = `${jobs.length} Jobs`;
+      const container = $("jobListContainer");
+      container.innerHTML = "";
+
+      if (jobs.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No jobs created yet.</p>`;
+        return;
+      }
+
+      jobs.forEach(j => {
+        const card = document.createElement("div");
+        const isActive = j.id === activeJobId;
+        card.className = `p-3 rounded-xl border text-xs cursor-pointer transition flex items-center justify-between ${
+          isActive
+            ? "border-brand-500 bg-brand-50/50 dark:bg-brand-950/40 shadow-sm"
+            : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
+        }`;
+        card.onclick = () => {
+          activeJobId = j.id;
+          renderActiveJob();
+        };
+
+        card.innerHTML = `
+          <div class="space-y-0.5 truncate pr-2">
+            <div class="font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-1.5">
+              <span>Job #${j.id}</span>
+              <span class="text-slate-400 font-normal truncate">(${j.amount} GL)</span>
+            </div>
+            <p class="text-slate-500 dark:text-slate-400 truncate">${j.brief}</p>
+          </div>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+            j.status === 'RELEASED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300' :
+            j.status === 'DISPUTED' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300' :
+            j.status === 'SPLIT' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300' :
+            'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+          }">
+            ${j.status}
+          </span>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // --- Action Button Handlers ---
+    async function handleAction(btn, fn) {
+      const origText = btn.innerHTML;
+      btn.disabled = true;
+      btn.style.opacity = "0.6";
+      try {
+        await fn();
+        await renderActiveJob();
+      } catch (err) {
+        log(`✗ Error: ${err.message}`, "error");
+        showToast(err.message, "⚠️");
+      } finally {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.innerHTML = origText;
+      }
+    }
+
+    $("btnCreateJob").onclick = (e) => handleAction(e.currentTarget, async () => {
+      const fl = $("inputFreelancerAddr").value.trim();
+      const brief = $("inputBrief").value.trim();
+      const amt = Number($("inputAmount").value);
+      if (!brief) throw new Error("Brief cannot be empty");
+      await executeContractWrite("create_job", [fl, brief, amt]);
+    });
+
+    $("btnSubmitDelivery").onclick = (e) => handleAction(e.currentTarget, async () => {
+      const url = $("inputDeliverableUrl").value.trim();
+      if (!url) throw new Error("Deliverable URL required");
+      await executeContractWrite("submit_delivery", [activeJobId, url]);
+    });
+
+    $("btnApprove").onclick = (e) => handleAction(e.currentTarget, async () => {
+      await executeContractWrite("approve", [activeJobId]);
+    });
+
+    $("btnCancelJob").onclick = (e) => handleAction(e.currentTarget, async () => {
+      await executeContractWrite("cancel_job", [activeJobId]);
+    });
+
+    $("btnOpenDispute").onclick = (e) => handleAction(e.currentTarget, async () => {
+      const claim = $("inputClaim").value.trim();
+      if (!claim) throw new Error("Claim explanation required to open dispute");
+      await executeContractWrite("open_dispute", [activeJobId, claim]);
+    });
+
+    $("btnRespondDispute").onclick = (e) => handleAction(e.currentTarget, async () => {
+      const claim = $("inputClaim").value.trim();
+      if (!claim) throw new Error("Response explanation required");
+      await executeContractWrite("respond_to_dispute", [activeJobId, claim]);
+    });
+
+    $("btnResolveDispute").onclick = (e) => handleAction(e.currentTarget, async () => {
+      await executeContractWrite("resolve", [activeJobId]);
+    });
+
+    $("btnRefresh").onclick = renderActiveJob;
+    $("btnClearLog").onclick = () => { $("txLog").innerHTML = ""; };
+
+    // Role clicks
+    $("roleClientBtn").onclick = () => setRole("CLIENT");
+    $("roleFreelancerBtn").onclick = () => setRole("FREELANCER");
+    $("roleArbiterBtn").onclick = () => setRole("ARBITER");
+
+    // Mode clicks
+    $("modeSimBtn").onclick = () => setMode(false);
+    $("modeLiveBtn").onclick = () => setMode(true);
+
+    $("connectContractBtn").onclick = () => {
+      const addr = $("contractAddressInput").value.trim();
+      if (!addr) {
+        showToast("Please enter deployed contract address", "⚠️");
+        return;
+      }
+      deployedContractAddress = addr;
+      log(`Linked to Intelligent Contract at: ${addr}`, "success");
+      showToast("Contract Linked!", "🔗");
+      renderActiveJob();
+    };
+
+    $("copyAddrBtn").onclick = () => {
+      navigator.clipboard.writeText(getActiveAddress());
+      showToast("Address copied!", "📋");
+    };
+
+    // Preset Scenarios
+    $("scenario1Btn").onclick = async () => {
+      log("⚡ Loading Scenario A: Perfect Delivery (100% Release)...", "info");
+      setRole("CLIENT");
+      $("inputFreelancerAddr").value = ADDR_BOB;
+      $("inputBrief").value = "Build responsive modern landing page with pricing table and dark mode.";
+      $("inputAmount").value = "400";
+      await executeContractWrite("create_job", [ADDR_BOB, $("inputBrief").value, 400]);
+
+      // Bob delivers
+      setRole("FREELANCER");
+      $("inputDeliverableUrl").value = "https://demo.trustwork.eth/complete-landing-page";
+      await executeContractWrite("submit_delivery", [activeJobId, $("inputDeliverableUrl").value]);
+
+      // Alice approves
+      setRole("CLIENT");
+      await executeContractWrite("approve", [activeJobId]);
+      await renderActiveJob();
+    };
+
+    $("scenario2Btn").onclick = async () => {
+      log("⚡ Loading Scenario B: Partial Scope Dispute (50/50 Split)...", "warn");
+      setRole("CLIENT");
+      $("inputFreelancerAddr").value = ADDR_BOB;
+      $("inputBrief").value = "Full-stack SaaS app with Stripe payment gateway, user auth, and dashboard.";
+      $("inputAmount").value = "1000";
+      await executeContractWrite("create_job", [ADDR_BOB, $("inputBrief").value, 1000]);
+
+      // Bob delivers partial
+      setRole("FREELANCER");
+      $("inputDeliverableUrl").value = "https://demo.trustwork.eth/partial-ui-only";
+      await executeContractWrite("submit_delivery", [activeJobId, $("inputDeliverableUrl").value]);
+
+      // Alice disputes
+      setRole("CLIENT");
+      $("inputClaim").value = "Only UI prototype delivered. Stripe integration and backend are completely absent.";
+      await executeContractWrite("open_dispute", [activeJobId, $("inputClaim").value]);
+
+      // Bob responds
+      setRole("FREELANCER");
+      $("inputClaim").value = "I delivered the full UI system and 8 responsive pages which was 50% of the effort.";
+      await executeContractWrite("respond_to_dispute", [activeJobId, $("inputClaim").value]);
+
+      // AI Resolves
+      setRole("ARBITER");
+      await executeContractWrite("resolve", [activeJobId]);
+      await renderActiveJob();
+    };
+
+    $("scenario3Btn").onclick = async () => {
+      log("⚡ Loading Scenario C: Broken / Scam Delivery (0% Full Refund)...", "error");
+      setRole("CLIENT");
+      $("inputFreelancerAddr").value = ADDR_BOB;
+      $("inputBrief").value = "Deploy audited Smart Contract with unit test coverage on Ethereum.";
+      $("inputAmount").value = "800";
+      await executeContractWrite("create_job", [ADDR_BOB, $("inputBrief").value, 800]);
+
+      // Bob submits fake link
+      setRole("FREELANCER");
+      $("inputDeliverableUrl").value = "https://example.com/404-broken-link";
+      await executeContractWrite("submit_delivery", [activeJobId, $("inputDeliverableUrl").value]);
+
+      // Alice disputes
+      setRole("CLIENT");
+      $("inputClaim").value = "The URL is a broken 404 page, nothing was built or delivered!";
+      await executeContractWrite("open_dispute", [activeJobId, $("inputClaim").value]);
+
+      // AI Resolves
+      setRole("ARBITER");
+      await executeContractWrite("resolve", [activeJobId]);
+      await renderActiveJob();
+    };
+
+    // Dark/Light Theme
+    let isDark = true;
+    $("themeToggle").onclick = () => {
+      isDark = !isDark;
+      if (isDark) {
+        document.documentElement.classList.add("dark");
+        $("themeIcon").textContent = "🌙";
+      } else {
+        document.documentElement.classList.remove("dark");
+        $("themeIcon").textContent = "☀️";
+      }
+    };
+    document.documentElement.classList.add("dark");
+
+    // Initialize Default State
+    (async () => {
+      setRole("CLIENT");
+      // Pre-seed an initial demo job so the dashboard looks great immediately
+      await executeContractWrite("create_job", [
+        ADDR_BOB,
+        "Build modern crypto portfolio landing page with interactive charts & mobile support",
+        650
+      ]);
+      setRole("FREELANCER");
+      await executeContractWrite("submit_delivery", [1, "https://portfolio-showcase.web.app/preview"]);
+      setRole("CLIENT");
+      await renderActiveJob();
+    })();
+  </script>
+</body>
+</html>
