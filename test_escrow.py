@@ -76,7 +76,6 @@ class Nondet:
 
 class EqPrinciple:
     def prompt_non_comparative(self, judge_fn, task: str, criteria: str) -> str:
-        # Leader executes judge_fn, validators reach consensus
         return judge_fn()
 
 
@@ -90,33 +89,65 @@ class PublicDecorators:
         return fn
 
 
+class StorageNamespace:
+    def __init__(self):
+        self.TreeMap = TreeMap
+
+    @staticmethod
+    def allow(cls):
+        return cls
+
+
+class ContractNamespace:
+    class Contract:
+        def __init_subclass__(cls):
+            pass
+
+
+class VMNamespace:
+    class UserError(Exception):
+        pass
+
+
 class MockGL:
     def __init__(self):
         self.message = Message()
         self.nondet = Nondet()
         self.eq_principle = EqPrinciple()
         self.public = PublicDecorators()
-        self.Contract = object
+        self.storage = StorageNamespace()
+        self.contract = ContractNamespace()
+        self.vm = VMNamespace()
 
 
 gl = MockGL()
 
-
-def allow_storage(cls):
-    return cls
-
-
-# Inject mocks into module namespace so freelance_escrow can import or run
+# Inject mocks into module namespace so freelance_escrow can import
 import sys
 import types
 
 mock_module = types.ModuleType("genlayer")
 mock_module.gl = gl
+mock_module.public = gl.public
+mock_module.storage = gl.storage
+mock_module.contract = gl.contract
+mock_module.nondet = gl.nondet
+mock_module.eq_principle = gl.eq_principle
+mock_module.message = gl.message
+mock_module.vm = gl.vm
+
 mock_module.Address = Address
 mock_module.u256 = u256
 mock_module.TreeMap = TreeMap
-mock_module.allow_storage = allow_storage
+
+mock_module.types = types.ModuleType("genlayer.types")
+mock_module.types.Address = Address
+mock_module.types.u256 = u256
+
 sys.modules["genlayer"] = mock_module
+sys.modules["genlayer.types"] = mock_module.types
+sys.modules["genlayer.storage"] = mock_module.storage
+sys.modules["genlayer.contract"] = mock_module.contract
 
 # Now import the actual contract
 from freelance_escrow import FreelanceEscrow, Job
@@ -126,6 +157,7 @@ from freelance_escrow import FreelanceEscrow, Job
 class TestTrustWorkEscrow(unittest.TestCase):
     def setUp(self):
         self.escrow = FreelanceEscrow()
+        self.escrow.jobs = {}  # In test mock, provide dictionary backing
         self.client_addr = Address("0xclient111111111111111111111111111111111111")
         self.freelancer_addr = Address("0xfreelancer22222222222222222222222222222222")
         self.other_addr = Address("0xstranger33333333333333333333333333333333")
@@ -221,7 +253,7 @@ class TestTrustWorkEscrow(unittest.TestCase):
         self.assertEqual(job["freelancer_claim"], "I spent 30 hours on the UI and design system.")
 
         # Resolve via AI arbiter
-        gl.message.sender_address = self.other_addr  # anyone can trigger resolution
+        gl.message.sender_address = self.other_addr
         self.escrow.resolve(jid)
 
         job = self.escrow.get_job(jid)
