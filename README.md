@@ -21,27 +21,29 @@ Trong các giao dịch freelance truyền thống, khi phát sinh tranh chấp (
 ## 🏗️ Kiến Trúc Hệ Thống (Architecture)
 
 ```mermaid
-flowchart TD
-    Client["🧑‍💼 Client (Alice)"]
-    Freelancer["👨‍💻 Freelancer (Bob)"]
-    Contract["⚖️ Intelligent Contract (freelance_escrow.py)"]
-    Validators["🤖 GenLayer AI Validators (5 Nodes)"]
-    WebDeliverable["🌐 Live Deliverable URL"]
+sequenceDiagram
+    autonumber
+    actor Client as 🧑‍💼 Client (Alice)
+    actor Freelancer as 👨‍💻 Freelancer (Bob)
+    participant Contract as ⚖️ Escrow Contract
+    participant Validators as 🤖 AI Validators
+    participant Web as 🌐 Deliverable URL
 
-    Client -->|1. create_job (brief, deposit)| Contract
-    Freelancer -->|2. submit_delivery (url)| Contract
-    
-    alt Happy Path
-        Client -->|3a. approve| Contract
-        Contract -->|100% Escrow Released| Freelancer
-    else Dispute Path
-        Client -->|3b. open_dispute (claim)| Contract
-        Freelancer -->|4. respond_to_dispute (counter-claim)| Contract
-        Contract -->|5. resolve via Equivalence Principle| Validators
-        Validators -->|Fetch deliverable content| WebDeliverable
-        Validators -->|Consensus: 0/25/50/75/100% + Reasoning| Contract
-        Contract -->|Split Escrow & Record Reasoning| Freelancer
-        Contract -->|Refund Remaining Escrow| Client
+    Client->>Contract: create_job(brief, deposit)
+    Freelancer->>Contract: submit_delivery(url)
+
+    alt Happy Path: Direct Approval
+        Client->>Contract: approve()
+        Contract-->>Freelancer: 100% Escrow Released
+    else Dispute Path: AI Arbitration
+        Client->>Contract: open_dispute(claim)
+        Freelancer->>Contract: respond_to_dispute(counter_claim)
+        Note over Contract,Validators: Trigger resolve()
+        Validators->>Web: Fetch deliverable content
+        Validators->>Validators: Equivalence Principle Consensus (0-100%)
+        Validators-->>Contract: Verdict: Split % + Reasoning
+        Contract-->>Freelancer: Release Freelancer Share
+        Contract-->>Client: Refund Remaining Escrow
     end
 ```
 
@@ -51,7 +53,7 @@ flowchart TD
 
 | File | Chức năng |
 | :--- | :--- |
-| `freelance_escrow.py` | **Intelligent Contract** chính viết bằng Python cho GenLayer VM (`gl.Contract`), xử lý lưu trữ `TreeMap`, xác thực quyền, tương tác web và đồng thuận AI. |
+| `freelance_escrow.py` | **Intelligent Contract** chính viết bằng Python cho GenLayer VM (`gl.contract.Contract`), xử lý lưu trữ `TreeMap`, xác thực quyền, tương tác web và đồng thuận AI. |
 | `index.html` | **Frontend dApp Web3** hoàn chỉnh với 2 chế độ: **Interactive Simulator** (chạy ngay không cần deploy) và **GenLayer StudioNet** (kết nối on-chain thực). Hỗ trợ chuyển đổi vai trò Client / Freelancer / Arbiter. |
 | `test_escrow.py` | Bộ unit test tự động (6 test cases) mock môi trường GenLayer VM, kiểm tra 100% các nhánh nghiệp vụ, phân quyền và xử lý ngoại lệ. |
 | `serve.py` | Script khởi chạy máy chủ web cục bộ (`http://localhost:3000`). |
@@ -113,7 +115,7 @@ Trên giao diện web dApp, bạn có thể chọn nhanh 3 kịch bản mẫu:
 2. Tạo contract mới, dán toàn bộ mã nguồn từ file `freelance_escrow.py`.
 3. Bấm **Deploy** (không cần tham số khởi tạo `__init__`).
 4. Sao chép địa chỉ hợp đồng đã deploy (ví dụ: `0x...`).
-5. Mở `index.html`, chuyển sang chế độ **GenLayer StudioNet**, dán địa chỉ contract vào và bấm **Link Contract**.
+5. Mở `index.html` (hoặc [GitHub Pages](https://huy0x404.github.io/TrustWork/)), chuyển sang chế độ **GenLayer StudioNet**, dán địa chỉ contract vào và bấm **Link Contract**.
 6. Thực hiện các giao dịch trực tiếp trên chuỗi GenLayer StudioNet.
 
 ---
