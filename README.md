@@ -53,59 +53,38 @@ sequenceDiagram
 
 | File | Chức năng |
 | :--- | :--- |
-| `freelance_escrow.py` | **Intelligent Contract** chính viết bằng Python cho GenLayer VM (`gl.contract.Contract`), xử lý lưu trữ `TreeMap`, xác thực quyền, tương tác web và đồng thuận AI. |
-| `index.html` | **Frontend dApp Web3** hoàn chỉnh với 2 chế độ: **Interactive Simulator** (chạy ngay không cần deploy) và **GenLayer StudioNet** (kết nối on-chain thực). Hỗ trợ chuyển đổi vai trò Client / Freelancer / Arbiter. |
-| `test_escrow.py` | Bộ unit test tự động (6 test cases) mock môi trường GenLayer VM, kiểm tra 100% các nhánh nghiệp vụ, phân quyền và xử lý ngoại lệ. |
+| `freelance_escrow.py` | **Intelligent Contract** chính viết bằng Python cho GenLayer VM (`gl.Contract`), xử lý lưu trữ `TreeMap`, xác thực quyền, tương tác web và đồng thuận AI. Đã deploy và chạy trên GenLayer Studio. |
+| `index.html` | **Frontend dApp Web3 thật** kết nối trực tiếp với GenLayer StudioNet qua thư viện `genlayer-js`. Quản lý tài khoản ký quỹ (Client / Freelancer / Custom Private Key), tạo job, nộp bài, tranh chấp và kích hoạt AI trọng tài on-chain. |
+| `test_escrow.py` | Bộ unit test tự động (5 test cases) mock môi trường GenLayer VM, kiểm tra 100% các nhánh nghiệp vụ, phân quyền và xử lý ngoại lệ. |
 | `serve.py` | Script khởi chạy máy chủ web cục bộ (`http://localhost:3000`). |
 | `README.md` | Tài liệu hướng dẫn chi tiết dự án. |
 
 ---
 
-## 🚀 Hướng Dẫn Chạy & Thử Nghiệm (Quick Start)
+## 🚀 Hướng Dẫn Sử Dụng Ứng Dụng Thật (Production Guide)
 
-### 1. Kiểm tra Unit Test Smart Contract
-Chạy bộ kiểm thử tự động để đảm bảo logic hợp đồng hoạt động chính xác:
-```powershell
-python test_escrow.py
-```
-*Kết quả mong đợi:*
-```text
-......
-----------------------------------------------------------------------
-Ran 6 tests in 0.000s
+### 1. Kết Nối Hợp Đồng Thông Minh (Intelligent Contract)
+1. Deploy file `freelance_escrow.py` trên **[GenLayer Studio](https://studio.genlayer.com)**.
+2. Sao chép địa chỉ hợp đồng đã deploy (ví dụ: `0x1234...abcd`).
+3. Mở dApp trên trình duyệt (qua GitHub Pages [https://huy0x404.github.io/TrustWork/](https://huy0x404.github.io/TrustWork/) hoặc chạy `serve.py`).
+4. Nhập địa chỉ contract vào ô **Smart Contract Connection** và bấm **Connect & Index**.
+5. Toàn bộ các công việc ký quỹ trên chuỗi sẽ được tự động đồng bộ và hiển thị theo thời gian thực.
 
-OK
-```
+### 2. Quản Lý Ví & Chuyển Đổi Vai Trò (Signer Management)
+Hợp đồng ký quỹ yêu cầu phân quyền nghiêm ngặt giữa hai bên:
+- **🧑‍💼 Client (Alice)**: Ví tạo hợp đồng, hủy hợp đồng, phê duyệt giải ngân 100% hoặc mở tranh chấp.
+- **👨‍💻 Freelancer (Bob)**: Ví nộp liên kết sản phẩm (`submit_delivery`) hoặc nộp phản biện tranh chấp (`respond_to_dispute`).
+- **🔑 Custom Key**: Cho phép nhập bất kỳ Private Key nào (ví dụ từ ví test trên GenLayer Studio hoặc MetaMask) để ký giao dịch thật.
 
-### 2. Khởi chạy Giao diện dApp
-Chạy server web cục bộ:
-```powershell
-python serve.py
-```
-Hoặc dùng module HTTP mặc định:
-```powershell
-python -m http.server 3000
-```
-Truy cập vào trình duyệt tại: **`http://localhost:3000`**
-
----
-
-## 🧪 Các Kịch Bản Thử Nghiệm Sẵn Có (Interactive Scenarios)
-
-Trên giao diện web dApp, bạn có thể chọn nhanh 3 kịch bản mẫu:
-
-1. **Scenario A: Perfect Delivery (100% Release)**:
-   - Brief: Xây dựng Landing Page đầy đủ tính năng responsive, pricing table.
-   - Freelancer nộp bài hoàn chỉnh.
-   - AI Validator hoặc Client duyệt: **100% tiền thưởng chuyển cho Freelancer**.
-2. **Scenario B: Partial Scope Dispute (50/50 Split)**:
-   - Brief: Xây dựng ứng dụng SaaS gồm UI + tích hợp cổng thanh toán Stripe.
-   - Freelancer nộp chỉ có phần giao diện UI, thiếu Stripe backend.
-   - Client mở tranh chấp -> Freelancer phản biện -> AI trọng tài phán quyết: **50% cho Freelancer, 50% hoàn lại cho Client**.
-3. **Scenario C: Broken / Scam Delivery (0% Refund)**:
-   - Brief: Triển khai Smart contract kiểm toán.
-   - Freelancer nộp liên kết lỗi 404 / trống.
-   - AI trọng tài phát hiện lỗi: **0% cho Freelancer, hoàn tiền 100% cho Client**.
+### 3. Quy Trình Vận Hành Trên Chuỗi (On-Chain Flow)
+1. **Tạo Job (`create_job`)**: Client điền địa chỉ Freelancer, bản mô tả yêu cầu (Brief) và số tiền ký quỹ, sau đó ký giao dịch.
+2. **Nộp bài (`submit_delivery`)**: Chuyển sang vai trò Freelancer, dán link sản phẩm (URL website, GitHub demo, tài liệu) và ký gửi lên contract.
+3. **Phê duyệt hoặc Tranh chấp**:
+   - Nếu hài lòng: Client bấm **Approve & Release 100%** (`approve`) để giải ngân toàn bộ cho Freelancer.
+   - Nếu vi phạm brief: Client bấm **Open Dispute** (`open_dispute`) kèm lý do cụ thể.
+4. **Phản biện & Phán quyết AI (`resolve`)**:
+   - Freelancer có thể nộp giải trình bảo vệ sản phẩm của mình (`respond_to_dispute`).
+   - Bất kỳ ai cũng có thể bấm **Trigger GenLayer AI Arbiter** (`resolve`): Mạng lưới validator của GenLayer sẽ tự động render trang web sản phẩm thật, chạy mô hình ngôn ngữ lớn (LLM) để đánh giá khách quan và ghi nhận phán quyết tỷ lệ chi trả (0%, 25%, 50%, 75%, 100%) kèm giải trình minh bạch vào blockchain.
 
 ---
 

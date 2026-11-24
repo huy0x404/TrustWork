@@ -113,6 +113,7 @@ class MockGL:
         self.public = PublicDecorators()
         self.storage = StorageNamespace()
         self.contract = ContractNamespace()
+        self.Contract = object
         self.vm = VMNamespace()
 
 
@@ -157,6 +158,9 @@ class TestTrustWorkEscrow(unittest.TestCase):
         self.other_addr = Address("0xstranger33333333333333333333333333333333")
         gl.message.sender_address = self.client_addr
 
+    def _get_job(self, jid):
+        return json.loads(self.escrow.get_job_json(jid))
+
     def test_create_job(self):
         jid = self.escrow.create_job(
             freelancer=str(self.freelancer_addr.as_hex),
@@ -166,7 +170,7 @@ class TestTrustWorkEscrow(unittest.TestCase):
         self.assertEqual(jid, 1)
         self.assertEqual(self.escrow.job_count(), 1)
 
-        job = self.escrow.get_job(1)
+        job = self._get_job(1)
         self.assertEqual(job["id"], 1)
         self.assertEqual(job["status"], "OPEN")
         self.assertEqual(job["amount"], 500)
@@ -186,7 +190,7 @@ class TestTrustWorkEscrow(unittest.TestCase):
 
         gl.message.sender_address = self.client_addr
         self.escrow.cancel_job(jid)
-        job = self.escrow.get_job(jid)
+        job = self._get_job(jid)
         self.assertEqual(job["status"], "REFUNDED")
         self.assertEqual(job["freelancer_pct"], 0)
 
@@ -199,13 +203,13 @@ class TestTrustWorkEscrow(unittest.TestCase):
 
         gl.message.sender_address = self.freelancer_addr
         self.escrow.submit_delivery(jid, "https://example.com/demo")
-        job = self.escrow.get_job(jid)
+        job = self._get_job(jid)
         self.assertEqual(job["status"], "DELIVERED")
         self.assertEqual(job["deliverable_url"], "https://example.com/demo")
 
         gl.message.sender_address = self.client_addr
         self.escrow.approve(jid)
-        job = self.escrow.get_job(jid)
+        job = self._get_job(jid)
         self.assertEqual(job["status"], "RELEASED")
         self.assertEqual(job["freelancer_pct"], 100)
 
@@ -228,7 +232,7 @@ class TestTrustWorkEscrow(unittest.TestCase):
         gl.message.sender_address = self.other_addr
         self.escrow.resolve(jid)
 
-        job = self.escrow.get_job(jid)
+        job = self._get_job(jid)
         self.assertEqual(job["status"], "SPLIT")
         self.assertEqual(job["freelancer_pct"], 50)
         self.assertIn("frontend UI nicely", job["reasoning"])
@@ -249,7 +253,7 @@ class TestTrustWorkEscrow(unittest.TestCase):
         gl.message.sender_address = self.other_addr
         self.escrow.resolve(jid)
 
-        job = self.escrow.get_job(jid)
+        job = self._get_job(jid)
         self.assertEqual(job["status"], "REFUNDED")
         self.assertEqual(job["freelancer_pct"], 0)
         self.assertIn("404", job["reasoning"])
